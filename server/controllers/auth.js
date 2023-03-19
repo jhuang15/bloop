@@ -38,3 +38,23 @@ export const register = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// LOGGING IN
+//Generally companies will use better and stronger auth but this is a very simple and basic understanding whats happening
+// When u register and login it gives you some kind of token and user uses that to sign in for varification
+export const login = async ( req, res ) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email: email }) //use mongoose to try to find one with specified email
+    if (!user) return res.status(400).json({ msg: "User does not exist"});
+
+    const isMatch = await bcrypt.compare(password, user.password); //bcrpt will use the same salt to compare the hash
+    if (!isMatch) return res.status(400).json({ msg: "Invalid Credentials. "});
+
+    const token = jwt.sign({ id: user._id }, process.envJWT_SECRET);
+    delete user.password;
+    res.status(200).json({ token, user});
+  } catch (err) {
+    res.status(500).json({ error: err.message});
+  }
+}
