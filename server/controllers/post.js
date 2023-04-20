@@ -46,7 +46,37 @@ export const getUserPosts = async (req, res) => {
     const { userId } = req.params;
     const post = await Post.find( { userId });
     res.status(200).json(post)
-  } catch {
+  } catch (err) {
+    res.status(404).json( { message: err.message })
+  }
+}
+
+// UPDATE
+export const likePost = async (req, res) => {
+  try{
+    const { id } = req.params; // Grab relevent post, id comes from query sting 
+    const { userId } = req.body; // userId comes from the body of request bc how it will be sent from frontend
+    const post = await Post.findById(id); // Grabing the post information
+    const isLiked = post.likes.get(userId);  // Grabbing whether the user has liked it or not
+
+    // Chcek if userId exist, if yes then that post has been liked by that person
+    if (isLiked) {
+      post.likes.delete(userId) // Delete if already exist
+    } else {
+      post.likes.set(userId, true) // Set if it doesn't exist
+    }
+
+    // Finally, depending on isLiked is we're going to update post and passing on the new likes. 
+    // This will update the frontend when like button hit
+    const updatedPost = await Post.findByIdAndUpdate(
+      id, 
+      { likes: post.likes }, // The list of likes we modified
+      { new: true}
+    )
+
+    res.status(200),json()
+
+  } catch (err) {
     res.status(404).json( { message: err.message })
   }
 }
