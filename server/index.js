@@ -14,47 +14,62 @@ import postRoutes from "./routes/posts.js";
 import { register } from "./controllers/auth.js";
 import { createPost } from "./controllers/posts.js";
 import { verifyToken } from "./middleware/auth.js";
+import User from "./models/User.js";
+import Post from "./models/Post.js";
+import { users, posts } from "./data/index.js";
 
-// CONFIGERATIONS 
+/* CONFIGURATIONS */
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(helmet());
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin"}));
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json({ limit: "30mb", extended: true }));
-app.use(bodyParser.urlencoded({ limit: "30mb", extended: true}));
+app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
 app.use(cors());
-// below will store all files locally. Could also use AWS S3 to store but want to keep simple
-app.use("./assets", express.static(path.join(__dirname, 'public/assets')));
+app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
-// FILE STORAGE
+/* FILE STORAGE */
 const storage = multer.diskStorage({
-  destination: function (req, file, cb){
+  destination: function (req, file, cb) {
     cb(null, "public/assets");
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname)
-  }
+    cb(null, file.originalname);
+  },
 });
 const upload = multer({ storage });
 
-//ROUTE WITH FILES
+/* ROUTES WITH FILES */
 app.post("/auth/register", upload.single("picture"), register);
-app.post("/post", verifyToken, upload.single("picture"), createPost); //when send from frontend, the picture image will grab "picture" property and upload
+app.post("/posts", verifyToken, upload.single("picture"), createPost);
 
-// ROUTES
+/* ROUTES */
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
-app.use("/post", postRoutes);
+app.use("/posts", postRoutes);
 
-// MONGOOSE SETUP
+/* MONGOOSE SETUP */
 const PORT = process.env.PORT || 6001;
-mongoose.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  app.listen(PORT, () => console.log(`Server Port: ${PORT}`));
-}).catch((error) => console.log(`${error} did not connect`));
+// NOT LIKE THE TUTORIAL, will return "..must be a string, got undefined" when link below not included.
+// suppose to be able to read from .env file
+// also had to reinstall everything don't know what happened.
+// same goes for port 
+const DATABASE = process.env.MONGO_URL || 'mongodb+srv://dummyuser:dummyuser123@cluster0.zc23s.mongodb.net/?retryWrites=true&w=majority';
+mongoose
+  .connect(DATABASE, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    app.listen(PORT, () => console.log(`Server Port: ${PORT}`));
+
+    /* ADD DATA ONE TIME, do not uncomment or duplicate will show in database*/
+    //User.insertMany(users);
+    //Post.insertMany(posts);
+  })
+  .catch((error) => console.log(`${error} did not connect`));

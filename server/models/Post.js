@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const postSchema = mongogse.Schema(
+const postSchema = mongoose.Schema(
   {
     userId: {
       type: String,
